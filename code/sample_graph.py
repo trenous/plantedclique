@@ -10,17 +10,18 @@ def sample_graph(N,p,clique):
     given the planted clique.
 
     Args:
-        N: number of nodes
-        p: the probability of sampling an edge betwen two nodes
-        clique: the indicator vector of the planted clique, 1d array of length N
+        N: number of nodes.
+        p: the probability of sampling an edge betwen two nodes.
+        clique: the indicator vector of the planted clique, 1d array of length N.
 
     Returns:
-        W: the NxN adjacency matrix of the graph
+        W: the NxN adjacency matrix of the graph. 1 indicates connected and -1 unconnected.
     '''
 
 
     # randomly sample edges between nodes
     W = np.random.binomial(1,p,(N,N))
+    W = 2 * W - 1 # rescale to (-1,1)
 
     # make W symmetric
     iu = np.triu_indices(N,1)
