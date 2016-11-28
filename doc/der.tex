@@ -1,0 +1,30 @@
+\documentclass{article}
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsfonts}
+\DeclareMathOperator*{\expectation}{\mathbf{E}}
+\begin{document}
+\subsection{Computaton of $\mu_t$}
+
+\newcommand{\E}[1]{ \expectation\limits_{Z\sim \mathbf{N(0,1)}} \left[ {#1} \right]}
+\renewcommand{\L}{\hat{L}_l}
+\newcommand{\mut}{\hat{\mu}_{t}}
+\begin{align*}
+  \mu_{t+1}(L_l, d, \mu_t) &= \E{p(\mut+Z , t)} \\
+                          &= \E{\dfrac{1}{\L} \sum\limits_{k=0}^d \dfrac{\mut^k(\mut+Z)^k}{k!}}\\
+                          &= \dfrac{1}{\L} \sum\limits_{k=0}^d \dfrac{\mut^k}{k!} \E{(\mut+Z)^k}\\
+\end{align*}
+\subsection{Computation of $ \E{(\mut+Z)^k}$}
+\begin{align*}
+  \E{(\mut+Z)^k} &= \E{\sum\limits_{i=0}^k \binom{k}{i} \mut^{k-1} Z^{i}} \\
+                 &= \sum\limits_{i=0}^k \binom{k}{i} \mut^{k-1} \E{Z^{i}} \\
+                 &= \sum\limits_{i=0}^k \binom{k}{i} \mut^{k-1}  (i \mod 2) * (i-1)!! \\
+\end{align*}
+
+\end{document}
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: t
+%%% End:
