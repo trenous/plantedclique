@@ -6,7 +6,7 @@ def get_L(mu_t, d):
     """ Returns L_t.
     """
     # ai = u_l^k / k!
-    # sum_{i+j is odd}} ai aj (i+j-1)!!
+    # sum_{i+j is even}} ai aj (i+j-1)!!
     mu_t = float(mu_t)
 
     A = np.ones(d+1)
