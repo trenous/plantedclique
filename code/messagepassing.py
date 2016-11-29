@@ -43,30 +43,25 @@ def get_poly(d, t):
                                          for i in np.arange(d + 1)])
         polys = np.array([get_moment(mu_t, i) for i in np.arange(d+1)])
         return np.sum(np.multiply(coeffs, polys))
-
+    
     def get_L(mu_t, d):
         """ Returns L_t.
         """
         # ai = u_l^k / k!
-        # sum_{i+j is odd}} ai aj (i+j-1)!!
-        mu_t = float(mu_t)
-
-        A = np.ones(d + 1)
-        for k in np.arange(d + 1):
-            A[k] = pow(mu_t, k) / fac(k)
-
-        H = np.zeros((d+1, d+1))
+        # sum_{i+j is even}} ai aj (i+j-1)!!
+        a = np.array([pow(mu_t,k)/fac(k) for k in np.arange(d + 1)])
+    
+        # compute all the moments up to 2*d
+        E = np.zeros(2*d+1)
         for i in np.arange(d+1):
-            for j in np.arange(i, d+1):
-                if (i+j) % 2 == 1:
-                    H[i, j] = 0
-                else:
-                    H[i, j] = fac2(i + j - 1)
-
-        iu = np.triu_indices(d+1, 1)
-        H.T[iu] = H[iu]
-
-        L2 = np.dot(A, np.dot(H, A))
+            E[2*i]=fac2(2*i-1)
+    
+        H = np.zeros((d+1,d+1))
+        for i in np.arange(d+1):
+            for j in np.arange(d+1):
+                H[i,j] = E[i+j]
+    
+        L2 = np.dot(a,np.dot(H,a))
         return math.sqrt(L2)
 
     # Compute Mu's , L's
