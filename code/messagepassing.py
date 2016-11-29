@@ -90,4 +90,4 @@ def get_poly(d, t):
         print polys
         return np.sum(np.multiply(coeffs, polys))
 
-    return poly, L_list, mu_list
+    return poly
