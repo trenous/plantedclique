@@ -1,5 +1,5 @@
 """ Implemementation of the message passing algorithm for planted clique.
-(Deshpande & Monatnari 2013, FInding)
+(Deshpande & Montanari 2013, Finding)
 """
 
 import numpy as np
@@ -9,11 +9,12 @@ from  scipy.special import binom
 import math
 import sample_graph
 
-def msg_pass(W, d, t, rho):
+def msg_pass(CN,W, d, t, rho):
     """ msg pass.
     """
-    poly = get_poly(d,t)
     N = W.shape[1]
+    poly = get_poly(d,t, CN / math.sqrt(N))
+
     A = W/math.sqrt(N)
 
     return belief_prop(A,t,poly)
@@ -21,7 +22,7 @@ def msg_pass(W, d, t, rho):
 
 
 
-def get_poly(d, t):
+def get_poly(d, t, kappa):
     """ Returns a function generating the sequence of polynomials p(l, z)
     Args:
          d: Hyperparameter Controlling the number of moments
@@ -48,7 +49,7 @@ def get_poly(d, t):
         coeffs = (1.0 / L_t) * np.array([pow(mu_t, i) / (fac(i))
                                          for i in np.arange(d + 1)])
         polys = np.array([get_moment(mu_t, i) for i in np.arange(d+1)])
-        return np.sum(np.multiply(coeffs, polys))
+        return kappa * sum(np.multiply(coeffs, polys))
 
     def get_L(mu_t, d):
         """ Returns L_t.
@@ -97,7 +98,7 @@ def get_poly(d, t):
         return np.sum(np.multiply(coeffs, polys))
 
 
-    return poly
+    return poly, mu_list
 
 
 def belief_prop_iter(A,theta_N, theta_NN, poly,t):
