@@ -9,6 +9,9 @@ from  scipy.special import binom
 import math
 import sample_graph
 
+def POLY(z,t):
+    return pow(z,t)
+
 def msg_pass(CN,W, d, t, rho):
     """ msg pass.
     """
@@ -40,7 +43,8 @@ def get_poly(d, t, kappa):
         """
         coeffs = np.array([binom(k, i) * pow(mu,  i)
                            for i in np.arange(k + 1)])
-        return np.sum(np.multiply(moments[:k + 1], coeffs))
+
+        return np.sum(np.multiply(moments[k::-1], coeffs))
 
 
     def get_mu(mu_t, L_t):
@@ -93,10 +97,9 @@ def get_poly(d, t, kappa):
         coeffs = (1.0 / L_list[l]) * np.array([pow(mu_list[l], k) / (fac(k))
                                                for k in np.arange(d + 1)])
         polys = np.array([pow(z, k) for k in np.arange(d + 1)])
-        print coeffs
-        print polys
         return np.sum(np.multiply(coeffs, polys))
 
+    print(mu_list)
 
     return poly, mu_list
 
@@ -121,7 +124,12 @@ def belief_prop_iter(A,theta_N, theta_NN, poly,t):
     N = A.shape[1]
 
     # f(theta_{l->i})
-    F = poly(theta_NN,t)
+    F = np.zeros((N,N))
+    for i in np.arange(N):
+        for j in np.arange(N):
+            F[i,j] = poly(theta_NN[i,j],t)
+
+#    F = poly(theta_NN,t)
     F[np.diag_indices(N)] = 0
 
     # compute theta_N
@@ -164,14 +172,21 @@ def belief_prop(A,T, poly):
     # run T iterations
     for t in np.arange(T):
         theta_N,theta_NN = belief_prop_iter(A, theta_N,theta_NN, poly, t)
+        print(theta_N)
 
     return  theta_N, theta_NN
 
-clique = np.array([1,1,1,1,0,0,0,0,0,0])
-W = sample_graph.sample_graph(10,0.5,clique)
-d = 2
-t = 10
-rho =1
-a,b= msg_pass(W,d,t,rho)
-print(a)
-print(b)
+
+#clique = np.array([1,1,1,1,0,0,0,0,0,0])
+#W = sample_graph.sample_graph(10,0.5,clique)
+#print(W)
+#
+#d = 2
+#t = 10
+#rho =1
+#a,b= msg_pass(W,d,t,rho)
+#print(a)
+#print(b)
+
+
+#get_poly(2,10)
