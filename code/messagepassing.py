@@ -1,29 +1,14 @@
 """ Implemementation of the message passing algorithm for planted clique.
-(Deshpande & Montanari 2013, Finding)
+(Deshpande & Montanari 2013)
 """
 
 import numpy as np
+import scipy.linalg as linalg
 from scipy.misc import factorial2 as fac2
 from scipy.misc import factorial as fac
 from  scipy.special import binom
 import math
 import sample_graph
-
-def POLY(z,t):
-    return pow(z,t)
-
-def msg_pass(CN,W, d, t, rho):
-    """ msg pass.
-    """
-    N = W.shape[1]
-    poly = get_poly(d,t, CN / math.sqrt(N))
-
-    A = W/math.sqrt(N)
-
-    return belief_prop(A,t,poly)
-
-
-
 
 def get_poly(d, t, kappa):
     """ Returns a function generating the sequence of polynomials p(l, z)
@@ -87,64 +72,39 @@ def get_poly(d, t, kappa):
         """ Computes the sequence of polynomials from the algorithm.
 
         Args:
-            z: point to evaluate the function at
+            z: np.array to be evaluated
             l: Step Index
         Returns:
-            The l-th Polynomial evaluated at z
+            The l-th Polynomial evaluated pointise on z
         """
         if not l:
-            return 1.0
+            return np.ones(z.shape)
         coeffs = (1.0 / L_list[l]) * np.array([pow(mu_list[l], k) / (fac(k))
                                                for k in np.arange(d + 1)])
-        polys = np.array([pow(z, k) for k in np.arange(d + 1)])
-        return np.sum(np.multiply(coeffs, polys))
+        pows = np.arange(d+1) * np.ones(z.shape + (d+1,))
+        polys = np.power(np.expand_dims(z, 2), pows)
+        return np.sum((coeffs * polys).T, 0).T
 
-    print(mu_list)
-
-    return poly, mu_list
-
-
-def belief_prop_iter(A,theta_N, theta_NN, poly,t):
-    ''' Return theta_N and theta_NN for next iteration.
-
-    Args:
-        A: W/sqrt(N), symmetric
-        theta_N: vector of length N
-        theta_NN: NxN matirx, assymetric. theta_NN[i,j] = msg i -> j
-        poly: a polynomial function
-        t: time step, therefore f = poly(.,t)
+    print mu_list
+    return poly, mu_list, L_list
 
 
-    Returns:
-        theta_N: the new value for next iteration
-        theta_NN: the new value for next iteration
-     '''
+def POLY(z, t):
+    return pow(z, t)
 
-    # number of nodes
-    N = A.shape[1]
+def msg_pass(CN, W, d, t, rho):
+    """ msg pass.
+    """
+    N = W.shape[1]
+    poly, mus, ls = get_poly(d, t, CN / math.sqrt(N))
 
-    # f(theta_{l->i})
-    F = np.zeros((N,N))
-    for i in np.arange(N):
-        for j in np.arange(N):
-            F[i,j] = poly(theta_NN[i,j],t)
+    A = W / math.sqrt(N)
+    theta_N = belief_prop(A, t, poly)
+    return theta_N, mus, ls
 
-#    F = poly(theta_NN,t)
-    F[np.diag_indices(N)] = 0
 
-    # compute theta_N
-    # theta_N[i] = sum_{j!=i} A[j,i] * F[j,i]
-    #            = sum( A[,i] * F[,i]),
-    # since A[i,i] = F[i,i] = 0
-    theta_N = np.sum(F * A,0)
 
-    # compute theta_NN
-    # theta_NN[i,] = theta_N[i] - A[,i] * F[,i]
-    theta_NN = np.reshape(np.repeat(theta_N,N),(N,N)) -A * F.T
-
-    return theta_N, theta_NN
-
-def belief_prop(A,T, poly):
+def belief_prop(A, T, poly):
 
     ''' Run belief propagation and return theta_N, theta_NN .
 
@@ -174,19 +134,57 @@ def belief_prop(A,T, poly):
         theta_N,theta_NN = belief_prop_iter(A, theta_N,theta_NN, poly, t)
         print(theta_N)
 
-    return  theta_N, theta_NN
+    return  theta_N
 
 
-#clique = np.array([1,1,1,1,0,0,0,0,0,0])
-#W = sample_graph.sample_graph(10,0.5,clique)
-#print(W)
-#
-#d = 2
-#t = 10
-#rho =1
-#a,b= msg_pass(W,d,t,rho)
-#print(a)
-#print(b)
+def belief_prop_iter(A, theta_N, theta_NN, poly, t):
+    ''' Return theta_N and theta_NN for next iteration.
+
+    Args:
+        A: W/sqrt(N), symmetric
+        theta_N: vector of length N
+        theta_NN: NxN matirx, assymetric. theta_NN[i,j] = msg i -> j
+        poly: a polynomial function
+        t: time step, therefore f = poly(.,t)
 
 
-#get_poly(2,10)
+    Returns:
+        theta_N: the new value for next iteration
+        theta_NN: the new value for next iteration
+     '''
+
+    # number of nodes
+    N = A.shape[1]
+
+    # f(theta_{l->i})
+    #F = np.zeros((N,N))
+    #for i in np.arange(N):
+    #for j in np.arange(N):
+    #F[i,j] = poly(theta_NN[i,j],t)
+
+    F = poly(theta_NN, t)
+    F[np.diag_indices(N)] = 0
+
+    # compute theta_N
+    # theta_N[i] = sum_{j!=i} A[j,i] * F[j,i]
+    #            = sum( A[,i] * F[,i]),
+    # since A[i,i] = F[i,i] = 0
+    theta_N = np.sum(F * A, 0)
+
+    # compute theta_NN
+    # theta_NN[i,] = theta_N[i] - A[,i] * F[,i]
+    theta_NN = np.reshape(np.repeat(theta_N, N), (N, N)) - (A * F).T
+
+    return theta_N, theta_NN
+
+
+def predict_clique(theta_N, A, CN):
+    mean = np.mean(np.abs(theta_N))
+    C_tilde = (theta_N > 2*mean).nonzero()
+    A_tilde = A[np.ix_(C_tilde, C_tilde)]
+    _, eigs = linalg.eigh(A_tilde, eigvals=A.shape - (1,1))
+    u_star = eigs[:,-1]
+    B_N = np.argpartition(u_star, -CN)[-CN:]
+    scores = np.sum(A[:,B_N] > 0, 1)
+    is_clique = scores > (B_N.shape[0] / 2.0)
+    return is_clique.nonzero()
